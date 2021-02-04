@@ -3,6 +3,8 @@
 set -e
 set -x
 
+#DRONE_COMMIT_SHA=4505d892f8baf2f6dc9f3541e520b753300e68ba
+
 VERSION=$DRONE_TAG
 
 if [ -z "$VERSION" ]; then

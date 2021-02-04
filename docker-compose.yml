@@ -1,31 +1,67 @@
-version: '2'
+version: '3.7'
 
 services:
   drone-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: laszlocloud/woodpecker-server:local
+    image: laszlocloud/woodpecker-server:latest
+#    image: drone/drone:1
     ports:
       - 8000:8000
+#      - 8000:80
     volumes:
-      - /var/lib/drone:/var/lib/drone/
+      - ./data:/var/lib/drone/
     environment:
       - DRONE_OPEN=true
-      - DRONE_ADMIN=laszlocph
-      - DRONE_HOST=${HOST}
-      - DRONE_GITHUB=true
-      - DRONE_GITHUB_CLIENT=${GITHUB_CLIENT}
-      - DRONE_GITHUB_SECRET=${GITHUB_SECRET}
-      - DRONE_SECRET=${DRONE_SECRET}
+      - DRONE_ADMIN=zahnen
+      - DRONE_HOST=http://192.168.2.137:8000
+#      - DRONE_SERVER_HOST=192.168.2.113:8000
+#      - DRONE_SERVER_PROTO=http
+      - DRONE_GITEA=true
+      - DRONE_GITEA_URL=http://192.168.2.137:3000
+      - DRONE_GITEA_SERVER=http://192.168.2.137:3000
+      - DRONE_GITEA_CLIENT=532c03f5-6950-47c7-a6f4-c5de4fdaf2b7
+      - DRONE_GITEA_CLIENT_ID=532c03f5-6950-47c7-a6f4-c5de4fdaf2b7
+      - DRONE_GITEA_SECRET=goMHfttTMyxiuTk6XkhfMYAN_MAXSuSemWRoMYjJtLA=
+      - DRONE_GITEA_CLIENT_SECRET=goMHfttTMyxiuTk6XkhfMYAN_MAXSuSemWRoMYjJtLA=
+      - DRONE_GITEA_SKIP_VERIFY=true
+      - DRONE_SECRET=bla
+      - DRONE_RPC_SECRET=bla
+
   drone-agent:
-    build:
-      context: .
-      dockerfile: Dockerfile.agent
-    image: laszlocloud/woodpecker-agent:local
+    image: laszlocloud/woodpecker-agent:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DRONE_SERVER=drone-server:9000
-      - DRONE_SECRET=${DRONE_SECRET}
+      - DRONE_SECRET=bla
       - DRONE_MAX_PROCS=2
+
+  gitea:
+    image: gitea/gitea:latest
+    environment:
+      - APP_NAME=Gitea test
+      - RUN_MODE=prod
+      - SECRET_KEY=42d13412-0c4e-4457-b495-42ad10117228
+      - DISABLE_REGISTRATION=false
+    restart: always
+    volumes:
+      - gitea_data:/data
+#      - type: bind
+#        source: /etc/timezone
+#        target: /etc/timezone
+#        read_only: true
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+      - target: 222
+        published: 222
+        protocol: tcp
+        mode: host
+
+volumes:
+  gitea_data:
