@@ -124,6 +124,9 @@ func setupGitea(c *cli.Context) (remote.Remote, error) {
 	return gitea.New(gitea.Opts{
 		URL:         c.String("gitea-server"),
 		Context:     c.String("gitea-context"),
+		Client:      c.String("gitea-client"),
+		Secret:      c.String("gitea-secret"),
+		Scopes:  	 c.StringSlice("gitea-scope"),
 		Username:    c.String("gitea-git-username"),
 		Password:    c.String("gitea-git-password"),
 		PrivateMode: c.Bool("gitea-private-mode"),

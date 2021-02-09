@@ -336,6 +336,27 @@ var flags = []cli.Flag{
 		Value:  "continuous-integration/drone",
 	},
 	cli.StringFlag{
+		EnvVar: "DRONE_GITEA_CLIENT",
+		Name:   "gitea-client",
+		Usage:  "gitea oauth2 client id",
+	},
+	cli.StringFlag{
+		EnvVar: "DRONE_GITEA_SECRET",
+		Name:   "gitea-secret",
+		Usage:  "gitea oauth2 client secret",
+	},
+	cli.StringSliceFlag{
+		EnvVar: "DRONE_GITEA_SCOPE",
+		Name:   "gitea-scope",
+		Usage:  "gitea oauth2 scope",
+		Value: &cli.StringSlice{
+			"repo",
+			"repo:status",
+			"user:email",
+			"read:org",
+		},
+	},
+	cli.StringFlag{
 		EnvVar: "DRONE_GITEA_GIT_USERNAME,WOODPECKER_GITEA_GIT_USERNAME",
 		Name:   "gitea-git-username",
 		Usage:  "gitea service account username",

@@ -30,6 +30,10 @@ import (
 type Opts struct {
 	URL         string // Gitea server url.
 	Context     string // Context to display in status check
+	Client      string   // Gitea oauth client id.
+	Secret      string   // Gitea oauth client secret.
+	Scopes      []string // Gitea oauth scopes
+	RedirectURL string   // Gitea oauth redirect url
 	Username    string // Optional machine account username.
 	Password    string // Optional machine account password.
 	PrivateMode bool   // Gitea is running in private mode.
@@ -39,6 +43,10 @@ type Opts struct {
 type client struct {
 	URL         string
 	Context     string
+	Client      string
+	Secret      string
+	Scopes      []string
+	RedirectURL string
 	Machine     string
 	Username    string
 	Password    string
@@ -114,6 +122,9 @@ func New(opts Opts) (remote.Remote, error) {
 	return &client{
 		URL:         opts.URL,
 		Context:     opts.Context,
+		Client:      opts.Client,
+		Secret:      opts.Secret,
+		Scopes:      opts.Scopes,
 		Machine:     url.Host,
 		Username:    opts.Username,
 		Password:    opts.Password,
