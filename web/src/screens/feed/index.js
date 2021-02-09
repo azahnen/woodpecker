@@ -98,7 +98,7 @@ export default class Sidebar extends Component {
 
   render() {
     const { feed } = this.props;
-    const { filter } = this.state;
+    const { filter, starred } = this.state;
 
     const list = feed.data ? Object.values(feed.data) : [];
 
@@ -112,16 +112,17 @@ export default class Sidebar extends Component {
     return (
       <div className={style.feed}>
         {LOGO}
-        <Collapsible
-          trigger="Starred"
-          triggerTagName="div"
-          transitionTime={200}
-          open={starredOpen}
-          onOpen={this.toggleStarred}
-          onClose={this.toggleStarred}
-          triggerOpenedClassName={style.Collapsible__trigger}
-          triggerClassName={style.Collapsible__trigger}
-        >
+        {starred && starred.length > 0 && (
+          <Collapsible
+            trigger="Starred"
+            triggerTagName="div"
+            transitionTime={200}
+            open={starredOpen}
+            onOpen={this.toggleStarred}
+            onClose={this.toggleStarred}
+            triggerOpenedClassName={style.Collapsible__trigger}
+            triggerClassName={style.Collapsible__trigger}
+          >
           {feed.loaded === false ? (
             LOADING
           ) : feed.error ? (
@@ -131,7 +132,8 @@ export default class Sidebar extends Component {
           ) : (
             this.renderFeed(list, true)
           )}
-        </Collapsible>
+          </Collapsible>
+        )}
         <Collapsible
           trigger="Repos"
           triggerTagName="div"

@@ -19,7 +19,7 @@ export const fetchBuild = (tree, client, owner, name, number) => {
   client
     .getBuild(owner, name, number)
     .then(build => {
-      const path = ["builds", "data", slug, build.number];
+      const path = ["builds", "data", slug, number];
 
       if (tree.exists(path)) {
         tree.deepMerge(path, build);

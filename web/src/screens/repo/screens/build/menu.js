@@ -16,6 +16,7 @@ const binding = (props, context) => {
   return {
     repo: ["repos", "data", slug],
     build: ["builds", "data", slug, number],
+    user: ["user"],
   };
 };
 
@@ -49,25 +50,24 @@ export default class BuildMenu extends Component {
   }
 
   render() {
-    const { build } = this.props;
+    const { build, user } = this.props;
 
-    const rightSide = !build ? (
-      undefined
-    ) : (
-      <section>
-        {build.status === "pending" || build.status === "running" ? (
-          <button onClick={this.handleCancel}>
-            <CloseIcon />
-            <span>Cancel</span>
-          </button>
-        ) : (
-          <button onClick={this.handleRestart}>
-            <RefreshIcon />
-            <span>Restart Build</span>
-          </button>
-        )}
-      </section>
-    );
+    const rightSide =
+      !build || !user || !user.data ? undefined : (
+        <section>
+          {build.status === "pending" || build.status === "running" ? (
+            <button onClick={this.handleCancel}>
+              <CloseIcon />
+              <span>Cancel</span>
+            </button>
+          ) : (
+            <button onClick={this.handleRestart}>
+              <RefreshIcon />
+              <span>Restart Build</span>
+            </button>
+          )}
+        </section>
+      );
 
     return (
       <div>
