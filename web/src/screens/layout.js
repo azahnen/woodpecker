@@ -152,7 +152,7 @@ export default class Default extends Component {
                 exact={true}
                 component={BuildMenu}
               />
-              <Route path="/:owner/:repo" exact={false} component={RepoMenu} />
+              <Route path="/:owner/:repo" exact={false} component={(props) => <RepoMenu {...props} user={user} />} />
             </Switch>
           </div>
 
