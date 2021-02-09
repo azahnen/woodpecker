@@ -68,6 +68,11 @@ func parsePushHook(payload io.Reader) (*model.Repo, *model.Build, error) {
 		return nil, nil, nil
 	}
 
+	// ignore push without commits, sent by Gitea in addition to tag event 
+	if len(push.Commits) == 0 {
+		return nil, nil, nil
+	}
+
 	repo = repoFromPush(push)
 	build = buildFromPush(push)
 	return repo, build, err
