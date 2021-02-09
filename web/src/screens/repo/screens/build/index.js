@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 
 import { fetchBuild, approveBuild, declineBuild } from "shared/utils/build";
 import {
@@ -25,7 +25,7 @@ import styles from "./index.less";
 const binding = (props, context) => {
   const { owner, repo, build } = props.match.params;
   const slug = `${owner}/${repo}`;
-  const number = parseInt(build);
+  const number = build === "latest" ? build : parseInt(build);
 
   return {
     repo: ["repos", "data", slug],
@@ -101,6 +101,11 @@ export default class BuildLogs extends Component {
 
   render() {
     const { repo, build } = this.props;
+    const { owner, repo: repoName, build: buildId } = this.props.match.params;
+
+    if (buildId === "latest" && build && build.id) {
+      return <Redirect to={`/${owner}/${repoName}/${build.id}`} />;
+    }
 
     if (!build || !repo) {
       return this.renderLoading();

@@ -107,12 +107,12 @@ export default class Default extends Component {
             <Switch>
               <Route path="/account/repos" component={UserRepoTitle} />
               <Route
-                path="/:owner/:repo/:build(\d*)/:proc(\d*)"
+                path="/:owner/:repo/:build(\d*|latest)/:proc(\d*)"
                 exact={true}
                 component={BuildLogsTitle}
               />
               <Route
-                path="/:owner/:repo/:build(\d*)"
+                path="/:owner/:repo/:build(\d*|latest)"
                 component={BuildLogsTitle}
               />
               <Route path="/:owner/:repo" component={RepoHeader} />
@@ -143,12 +143,12 @@ export default class Default extends Component {
               <Route path="/account/" exact={false} component={undefined} />
               BuildMenu
               <Route
-                path="/:owner/:repo/:build(\d*)/:proc(\d*)"
+                path="/:owner/:repo/:build(\d*|latest)/:proc(\d*)"
                 exact={true}
                 component={BuildMenu}
               />
               <Route
-                path="/:owner/:repo/:build(\d*)"
+                path="/:owner/:repo/:build(\d*|latest)"
                 exact={true}
                 component={BuildMenu}
               />
@@ -175,12 +175,12 @@ export default class Default extends Component {
               component={RepoSettings}
             />
             <Route
-              path="/:owner/:repo/:build(\d*)"
+              path="/:owner/:repo/:build(\d*|latest)"
               exact={true}
               component={BuildLogs}
             />
             <Route
-              path="/:owner/:repo/:build(\d*)/:proc(\d*)"
+              path="/:owner/:repo/:build(\d*|latest)/:proc(\d*)"
               exact={true}
               component={BuildLogs}
             />
