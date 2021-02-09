@@ -15,6 +15,7 @@
 package gitea
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -24,6 +25,8 @@ import (
 	"code.gitea.io/sdk/gitea"
 	"github.com/laszlocph/woodpecker/model"
 	"github.com/laszlocph/woodpecker/remote"
+	"github.com/laszlocph/woodpecker/shared/httputil"
+	"golang.org/x/oauth2"
 )
 
 // Opts defines configuration options.
@@ -133,9 +136,68 @@ func New(opts Opts) (remote.Remote, error) {
 	}, nil
 }
 
-// Login authenticates an account with Gitea using basic authentication. The
+// Login authenticates an account with Gitea using either OAuth2 or basic authentication. The
 // Gitea account details are returned when the user is successfully authenticated.
 func (c *client) Login(res http.ResponseWriter, req *http.Request) (*model.User, error) {
+
+	if len(c.Client) == 0 || len(c.Secret) == 0 {
+		// fall back to basic auth
+		return c.LoginBasicAuth(res, req)
+	}
+
+	return c.LoginOAuth(res, req)
+}
+
+// LoginOAuth authenticates an account with Gitea using OAuth2. The
+// Gitea account details are returned when the user is successfully authenticated.
+func (c *client) LoginOAuth(res http.ResponseWriter, req *http.Request) (*model.User, error) {
+	config := c.newOAuth2Config(req)
+
+	// get the OAuth errors
+	if err := req.FormValue("error"); err != "" {
+		return nil, &remote.AuthError{
+			Err:         err,
+			Description: req.FormValue("error_description"),
+			URI:         req.FormValue("error_uri"),
+		}
+	}
+
+	// get the OAuth code
+	code := req.FormValue("code")
+	if len(code) == 0 {
+		// TODO(bradrydzewski) we really should be using a random value here and
+		// storing in a cookie for verification in the next stage of the workflow.
+
+		http.Redirect(res, req, config.AuthCodeURL("drone"), http.StatusSeeOther)
+		return nil, nil
+	}
+
+	token, err := config.Exchange(c.newContext(), code)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := c.newClientToken(token.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	
+	account, _, err := client.GetMyUserInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.User{
+		Token:  token.AccessToken,
+		Login:  account.UserName,
+		Email:  account.Email,
+		Avatar: expandAvatar(c.URL, account.AvatarURL),
+	}, nil
+}
+
+// LoginBasicAuth authenticates an account with Gitea using basic authentication. The
+// Gitea account details are returned when the user is successfully authenticated.
+func (c *client) LoginBasicAuth(res http.ResponseWriter, req *http.Request) (*model.User, error) {
 	var (
 		username = req.FormValue("username")
 		password = req.FormValue("password")
@@ -377,12 +439,62 @@ func (c *client) Hook(r *http.Request) (*model.Repo, *model.Build, error) {
 // helper function to return the Gitea client
 func (c *client) newClientToken(token string) (*gitea.Client, error) {
 	httpClient := &http.Client{}
-	if c.SkipVerify {
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+
+	// basic auth
+	if len(c.Client) == 0 || len(c.Secret) == 0 {		
+		if c.SkipVerify {
+			httpClient.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+		}
+	} else {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token},
+		)
+		httpClient = oauth2.NewClient(oauth2.NoContext, ts)
+		if c.SkipVerify {
+			httpClient.Transport.(*oauth2.Transport).Base = &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			}
 		}
 	}
+
 	return gitea.NewClient(c.URL, gitea.SetToken(token), gitea.SetHTTPClient(httpClient))
+}
+
+// helper function to return the Gitea oauth2 context using an HTTPClient that
+// disables TLS verification if disabled in the remote settings.
+func (c *client) newContext() context.Context {
+	if !c.SkipVerify {
+		return oauth2.NoContext
+	}
+	return context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	})
+}
+
+// helper function to return the Gitea oauth2 config
+func (c *client) newOAuth2Config(req *http.Request) *oauth2.Config {
+	redirect := fmt.Sprintf("%s/authorize", httputil.GetURL(req))
+
+	return &oauth2.Config{
+		ClientID:     c.Client,
+		ClientSecret: c.Secret,
+		Scopes:       c.Scopes,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  fmt.Sprintf("%s/login/oauth/authorize", c.URL),
+			TokenURL: fmt.Sprintf("%s/login/oauth/access_token", c.URL),
+		},
+		RedirectURL: redirect,
+	}
 }
 
 // helper function to return matching hooks.
