@@ -26,7 +26,7 @@ import (
 
 	"github.com/laszlocph/woodpecker/model"
 	"github.com/laszlocph/woodpecker/remote"
-	"github.com/laszlocph/woodpecker/shared/httputil"
+//	"github.com/laszlocph/woodpecker/shared/httputil"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/net/context"
@@ -50,6 +50,7 @@ type Opts struct {
 	PrivateMode bool     // GitHub is running in private mode.
 	SkipVerify  bool     // Skip ssl verification.
 	MergeRef    bool     // Clone pull requests using the merge ref.
+	RedirectURL string   // Redirect url.
 }
 
 // New returns a Remote implementation that integrates with a GitHub Cloud or
@@ -76,6 +77,7 @@ func New(opts Opts) (remote.Remote, error) {
 		Machine:     url.Host,
 		Username:    opts.Username,
 		Password:    opts.Password,
+		RedirectURL: opts.RedirectURL,
 	}
 	if opts.URL != defaultURL {
 		remote.URL = strings.TrimSuffix(opts.URL, "/")
@@ -100,6 +102,7 @@ type client struct {
 	PrivateMode bool
 	SkipVerify  bool
 	MergeRef    bool
+	RedirectURL string
 }
 
 // Login authenticates the session and returns the remote user details.
@@ -338,12 +341,13 @@ func (c *client) newContext() context.Context {
 func (c *client) newConfig(req *http.Request) *oauth2.Config {
 	var redirect string
 
-	intendedURL := req.URL.Query()["url"]
-	if len(intendedURL) > 0 {
-		redirect = fmt.Sprintf("%s/authorize?url=%s", httputil.GetURL(req), intendedURL[0])
-	} else {
-		redirect = fmt.Sprintf("%s/authorize", httputil.GetURL(req))
-	}
+	//intendedURL := req.URL.Query()["url"]
+	redirect = fmt.Sprintf("%s/authorize", c.RedirectURL)
+	//if len(intendedURL) > 0 {
+	//	redirect = fmt.Sprintf("%s/authorize?url=%s", httputil.GetURL(req), intendedURL[0])
+	//} else {
+	//	redirect = fmt.Sprintf("%s/authorize", httputil.GetURL(req))
+	//}
 
 	return &oauth2.Config{
 		ClientID:     c.Client,
