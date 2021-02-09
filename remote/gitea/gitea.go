@@ -24,6 +24,7 @@ import (
 	"code.gitea.io/sdk/gitea"
 	"github.com/laszlocph/woodpecker/model"
 	"github.com/laszlocph/woodpecker/remote"
+	"github.com/peterhellberg/link"
 )
 
 // Opts defines configuration options.
@@ -229,7 +230,10 @@ func (c *client) Repos(u *model.User) ([]*model.Repo, error) {
 		return nil, err
 	}
 
-	all, _, err := client.ListMyRepos(gitea.ListReposOptions{})
+	const maxPages = 10 //this means max 500 repos
+
+	for page := 1; page <= maxPages; page++ {
+		all, more, err := reposPage(client, page)
 	if err != nil {
 		return repos, err
 	}
@@ -237,7 +241,37 @@ func (c *client) Repos(u *model.User) ([]*model.Repo, error) {
 	for _, repo := range all {
 		repos = append(repos, toRepo(repo, c.PrivateMode))
 	}
+		if !more {
+			break
+		}
+	}
+	
 	return repos, err
+}
+
+// reposPage is a helper function to do pagination for repository listing
+func reposPage(client *gitea.Client, page int) ([]*gitea.Repository, bool, error) {
+	opts := gitea.ListReposOptions{
+		ListOptions: gitea.ListOptions {
+			PageSize: 50, //maxPageSize from gitea client
+			Page: page,
+		},
+	}
+	more := false
+
+	all, resp, err := client.ListMyRepos(opts)
+	if err != nil {
+		return nil, more, err
+	}
+
+	for _, l := range link.ParseResponse(resp.Response) {
+		if l.Rel == "next" {
+			more = true
+			break
+		}
+	}	
+
+	return all, more, nil
 }
 
 // Perm returns the user permissions for the named Gitea repository.
