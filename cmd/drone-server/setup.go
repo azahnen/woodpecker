@@ -184,6 +184,7 @@ func setupGithub(c *cli.Context) (remote.Remote, error) {
 		PrivateMode: c.Bool("github-private-mode"),
 		SkipVerify:  c.Bool("github-skip-verify"),
 		MergeRef:    c.BoolT("github-merge-ref"),
+                RedirectURL: c.String("server-host"),
 	})
 }
 
